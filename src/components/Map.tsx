@@ -30,49 +30,52 @@ const PLACES_OF_INTEREST: Place[] = [
   },
 ];
 
+// Replace this with your actual Mapbox token
+mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHJwOWhtYmkwMjF1MmpwZnlicnV0ZWF6In0.JgLwWB0lHrZ7OB8RFRsS_w';
+
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Initialize map
-    mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN'; // User will need to provide this
-    
-    map.current = new mapboxgl.Map({
+    const initializeMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [0, 20],
       zoom: 2,
     });
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    initializeMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Add markers for places of interest
-    PLACES_OF_INTEREST.forEach((place) => {
-      const marker = new mapboxgl.Marker({
-        color: "#A67F5D",
-      })
-        .setLngLat(place.coordinates)
-        .addTo(map.current!);
+    initializeMap.on('load', () => {
+      setMap(initializeMap);
 
-      // Add click event to marker
-      marker.getElement().addEventListener('click', () => {
-        setSelectedPlace(place);
-        map.current?.flyTo({
-          center: place.coordinates,
-          zoom: 15,
-          duration: 2000,
+      // Add markers after map is loaded
+      PLACES_OF_INTEREST.forEach((place) => {
+        const marker = new mapboxgl.Marker({
+          color: "#A67F5D",
+        })
+          .setLngLat(place.coordinates)
+          .addTo(initializeMap);
+
+        const element = marker.getElement();
+        element.addEventListener('click', () => {
+          setSelectedPlace(place);
+          initializeMap.flyTo({
+            center: place.coordinates,
+            zoom: 15,
+            duration: 2000,
+          });
         });
       });
     });
 
     return () => {
-      map.current?.remove();
+      initializeMap.remove();
     };
   }, []);
 
@@ -105,7 +108,7 @@ const Map = () => {
                 className="w-full px-4 py-2 text-left hover:bg-map-cream transition-colors"
                 onClick={() => {
                   setSelectedPlace(place);
-                  map.current?.flyTo({
+                  map?.flyTo({
                     center: place.coordinates,
                     zoom: 15,
                     duration: 2000,
